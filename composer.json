@@ -1,0 +1,27 @@
+{
+    "name" : "Magento 1.x Composer Plugin",
+    "type" : "composer-plugin",
+    "require" : {
+        "composer-plugin-api" : "1.0.0"
+    },
+    "extra" : {
+        "class" : "luka\\composer\\MagentoPlugin"
+    },
+    "autoload" : {
+        "psr-0" : {
+            "luka\\composer\\" : "src/"
+        }
+    },
+    "description" : "This plugin allows installing packages from magento connect",
+    "homepage" : "http://www.luka.de/",
+    "license" : "GPL-3.0+",
+    "authors" : [{
+            "name" : "Axel Helmert",
+            "role" : "Lead Developer"
+        }
+    ],
+    "keywords" : [
+        "magento",
+        "connect"
+    ]
+}
