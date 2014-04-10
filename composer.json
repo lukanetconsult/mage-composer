@@ -1,16 +1,17 @@
 {
     "name" : "luka/mage-composer-plugin",
-    "type" : "composer-plugin",
+    "type" : "application",
+    "repositories" : [
+        { "type" : "git", "url" : "https://github.com/composer/composer" }
+    ],
     "require" : {
-        "composer-plugin-api" : "1.0.0"
-    },
-    "extra" : {
-        "class" : "luka\\composer\\MagentoPlugin"
+        "composer/composer" : "dev-master"
     },
     "autoload" : {
         "psr-0" : {
             "luka\\composer\\" : "src/"
-        }
+        },
+        "classmap" : [ "src/Composer/" ]
     },
     "description" : "This plugin allows installing packages from magento connect",
     "homepage" : "http://www.luka.de/",

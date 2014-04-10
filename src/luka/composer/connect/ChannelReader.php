@@ -8,7 +8,6 @@
 namespace luka\composer\connect;
 
 use Composer\Util\RemoteFilesystem;
-use Composer\Repository\Pear\PackageInfo;
 
 class ChannelReader
 {
@@ -51,12 +50,35 @@ class ChannelReader
      */
     protected function requestXml($path)
     {
-        $xml = simplexml_load_string($this->rfs->getContents($this->url, $path));
+        $xml = simplexml_load_string($this->rfs->getContents($this->url, $this->url . $path, false));
         if (!$xml instanceof \SimpleXMLElement) {
             throw new \RuntimeException('Failed to load ' . $path);
         }
 
         return $xml;
+    }
+
+    /**
+     * @param string $query
+     * @return PackageInfo[]
+     */
+    protected function search($query)
+    {
+        $filter = function($value) {
+            return preg_quote($value, '~');
+        };
+
+        $pattern = implode('|', array_map($filter, preg_split('~\s+~', $query)));
+        $pattern = "~$pattern~i";
+        $result = array();
+
+        foreach ($this->getPackages() as $package) {
+            if (preg_match($pattern, $package->getName())) {
+                $result[] = $package;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -69,7 +91,7 @@ class ChannelReader
         }
 
         $this->packages = array();
-        $xml = $this->rfs->getContents($this->url, '/packages.xml');
+        $xml = $this->requestXml('/packages.xml');
 
         foreach ($xml->p as $packageNode) {
             $name = (string)$packageNode->n;
@@ -88,7 +110,7 @@ class ChannelReader
      */
     public function loadReleases(PackageInfo $package)
     {
-        $xml = $this->requestXml($this->url, sprintf('/%s/releases.xml', $package->getName()));
+        $xml = $this->requestXml(sprintf('/%s/releases.xml', $package->getName()));
         $releases = new \ArrayObject();
 
         foreach ($xml->r as $releaseNode) {
@@ -109,6 +131,6 @@ class ChannelReader
      */
     public function getPackageXml(ReleaseInfo $info)
     {
-        return $this->requestXml($this->url, sprintf('/%s/%s/package.xml', $info->getPackage()->getName(), $info->getVersion()));
+        return $this->requestXml(sprintf('/%s/%s/package.xml', $info->getPackage()->getName(), $info->getVersion()));
     }
 }

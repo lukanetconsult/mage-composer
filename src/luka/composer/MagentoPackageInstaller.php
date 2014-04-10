@@ -85,8 +85,8 @@ class MagentoPackageInstaller extends LibraryInstaller
         $json = file_get_contents($file);
         $info = $json? json_decode($json) : array();
 
-        $this->installedDirs = (isset($info['dirs']))? $info['dirs'] : array();
-        $this->installedFiles = (isset($info['files']))? $info['files'] : array();
+        $this->installedDirs = (isset($info->dirs))? $info->dirs : array();
+        $this->installedFiles = (isset($info->files))? $info->files : array();
     }
 
     /**
@@ -118,6 +118,33 @@ class MagentoPackageInstaller extends LibraryInstaller
     }
 
     /**
+     * @param string $file
+     */
+    protected function fixArchive($file)
+    {
+        $this->io->write('    <warning>Trying to fix invalid archive ...</warning>');
+        $xd = dirname($file) . '/_tmp';
+        $this->filesystem->ensureDirectoryExists($xd);
+
+        exec('tar -xvz -C ' . escapeshellarg($xd) . ' -f ' . escapeshellarg($file), $out, $return);
+
+        if ($return !== 0) {
+            throw new \RuntimeException('Failed to repair tar file!');
+        }
+
+        $this->filesystem->remove($file);
+
+        $phar = new \PharData($file);
+        $phar->startBuffering();
+        $phar->buildFromDirectory($xd);
+        $phar->stopBuffering();
+
+        $this->filesystem->remove($xd);
+
+        return $phar;
+    }
+
+    /**
      * @param \PharData $archive
      * @param \SimpleXMLElement $node
      * @param string $target
@@ -129,32 +156,49 @@ class MagentoPackageInstaller extends LibraryInstaller
 
         foreach ($node->dir as $dirNode) {
             $path = $dir . $dirNode['name'];
-            $this->filesystem->ensureDirectoryExists($this->getRootDir($base . $path));
-            $this->installedDirs[] = $dir;
-            $this->walkPackage($archive, $dirNode, $target, $overwrite, $dir . $dirNode['name'] . '/');
+
+            if ('' != (string)$dirNode['name']) {
+                $path .= '/';
+            }
+
+            $dirpath = $this->getRootDir($base . $path);
+            if ($dirpath) {
+                $this->filesystem->ensureDirectoryExists($dirpath);
+                array_unshift($this->installedDirs, $dir);
+            }
+
+            $this->walkPackage($archive, $dirNode, $target, $overwrite, $path);
         }
 
         foreach ($node->file as $fileNode) {
+            if ('' == (string)$fileNode['name']) {
+                continue;
+            }
+
             $path = $dir . $fileNode['name'];
             $targetPath = $base . $path;
 
             if (!isset($archive[$path])) {
-                $this->io->write('<error>Failed to extract package file: ' . $path . '<error>');
+                if (!isset($archive[$targetPath])) {
+                    $this->io->write('<error>Failed to extract package file: ' . $path . '<error>');
+                    continue;
+                }
+
+                $path = $targetPath;
+            }
+
+            if (file_exists($targetPath) && !$overwrite) {
+                $this->io->write('<warning>Cannot install package file (File exists): ' . $targetPath . '<warning>');
                 continue;
             }
 
-            if (file_exists($path) && !$overwrite) {
-                $this->io->write('<warn>Cannot install package file (File exists): ' . $path . '<warn>');
-                continue;
-            }
-
-            $track = !file_exists($path);
-            $filePath = $this->getRootDir($path);
+            $track = !file_exists($targetPath);
+            $filePath = $this->getRootDir($targetPath);
 
             file_put_contents($filePath, $archive[$path]->getContent());
 
             if ($track) {
-                $this->installedFiles[$path] = sha1_file($filePath);
+                $this->installedFiles[$targetPath] = sha1_file($filePath);
             }
         }
     }
@@ -171,9 +215,13 @@ class MagentoPackageInstaller extends LibraryInstaller
         parent::installCode($package);
 
         /* @var $descriptionFile \PharFileInfo */
-        $archive = new \PharData($this->getArchiveFile($package));
-        $descriptionFile = isset($archive['package.xml'])? $archive['package.xml'] : false;
+        try {
+            $archive = new \PharData($this->getArchiveFile($package));
+        } catch (\Exception $e) {
+            $archive = $this->fixArchive($this->getArchiveFile($package));
+        }
 
+        $descriptionFile = isset($archive['package.xml'])? $archive['package.xml'] : false;
         if (($descriptionFile == false) || !$descriptionFile->isFile()) {
             throw new \RuntimeException('Invalid Magento Connect Package. Could not find package.xml');
         }
@@ -204,6 +252,7 @@ class MagentoPackageInstaller extends LibraryInstaller
                 continue;
             }
 
+            $this->io->write('    <comment>removing file: ' . $file . ' ...</comment>');
             $this->filesystem->remove($this->getRootDir($file));
         }
 

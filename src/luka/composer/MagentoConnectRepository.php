@@ -17,8 +17,10 @@ use Composer\EventDispatcher\EventDispatcher;
 use Composer\Util\RemoteFilesystem;
 use Composer\Package\Version\VersionParser;
 use Composer\Package\CompletePackage;
+use Composer\DependencyResolver\Pool;
+use Composer\Package\PackageInterface;
 
-class MagentoConnectRepository extends ArrayRepository
+class MagentoConnectRepository extends ArrayRepository implements ProviderRepositoryInterface
 {
     /**
      * @var string
@@ -41,9 +43,19 @@ class MagentoConnectRepository extends ArrayRepository
     private $versionParser;
 
     /**
+     * @var array
+     */
+    private $packageIndexCache = array();
+
+    /**
      * @var string
      */
     protected $vendorAlias = null;
+
+    /**
+     * @var connect\ChannelReader
+     */
+    protected $channel = null;
 
     /**
      * @param array $repoConfig
@@ -69,6 +81,20 @@ class MagentoConnectRepository extends ArrayRepository
         $this->rfs = $rfs ?: new RemoteFilesystem($this->io);
         $this->vendorAlias = isset($repoConfig['vendor-alias']) ? $repoConfig['vendor-alias'] : 'mage-community';
         $this->versionParser = new VersionParser();
+        $this->channel = new connect\ChannelReader($this->url, $this->rfs);
+    }
+
+    /**
+     * @param string $version
+     * @return string
+     */
+    protected function normalizeVersion($version)
+    {
+        if (preg_match('~^\d+(.\d){3}(.\d+)+(-(alpha\d*|beta\d*|dev\d*|rc\d*))?$~', $version)) {
+            return $version;
+        }
+
+        return $this->versionParser->normalize($version);
     }
 
     /**
@@ -77,7 +103,7 @@ class MagentoConnectRepository extends ArrayRepository
      */
     private function createPackageName(PackageInfo $info)
     {
-        return $this->vendorAlias . '/' . strtolower($info->getName());
+        return $this->vendorAlias . '/' . $info->getName();
     }
 
     /**
@@ -90,10 +116,10 @@ class MagentoConnectRepository extends ArrayRepository
         $version = $info->getVersion();
 
         try {
-            $normalizedVersion = $this->versionParser->normalize($version);
+            $normalizedVersion = $this->normalizeVersion($version);
         } catch (\UnexpectedValueException $e) {
-            $this->io->write('Could not load package %s %s: %s', $package->getName(), $version, $e->getMessage());
-            return $this;
+            $this->io->write(sprintf('Could not load package %s %s: %s', $package->getName(), $version, $e->getMessage()));
+            return false;
         }
 
         $package = new CompletePackage($composerPackageName, $normalizedVersion, $version);
@@ -102,21 +128,147 @@ class MagentoConnectRepository extends ArrayRepository
         $package->setDistUrl($info->getArchiveUrl());
 
         $this->addPackage($package);
+        return $package;
+    }
+
+    /**
+     * {@inheritdoc}
+     * @see \luka\composer\ProviderRepositoryInterface::whatProvides()
+     */
+    public function whatProvides(Pool $pool, $name)
+    {
+        if (strpos($name, strtolower($this->vendorAlias) . '/') !== 0) {
+            return array();
+        }
+
+        $candidates = array();
+
+        foreach ($this->findPackages($name) as $package) {
+            $stability = $this->versionParser->parseStability($package->getStability());
+
+            if (!$pool->isPackageAcceptable($package->getName(), $stability)) {
+                continue;
+            }
+
+            $candidates[] = $package;
+        }
+
+        return $candidates;
+    }
+
+    /**
+     * {@inheritdoc}
+     * @see \Composer\Repository\ArrayRepository::addPackage()
+     */
+    public function addPackage(PackageInterface $package)
+    {
+        parent::addPackage($package);
+
+        $name = strtolower($package->getName());
+        $this->packageIndexCache[$name][$package->getVersion()] = $package;
+
         return $this;
     }
 
     /**
      * {@inheritdoc}
-     * @see \Composer\Repository\ArrayRepository::initialize()
+     * @see \Composer\Repository\ArrayRepository::findPackage()
      */
-    protected function initialize()
+    public function findPackage($name, $version)
     {
-        $channel = new connect\ChannelReader($this->url, $this->rfs);
+        // normalize version & name
+        $version = $this->normalizeVersion($version);
+        $name = strtolower($name);
 
-        foreach ($channel->getPackages() as $packageInfo) {
-            foreach ($packageInfo->getReleases() as $releaseInfo) {
-                $this->createPackage($releaseInfo);
-            }
+        $this->findPackages($name);
+
+        if (isset($this->packageIndexCache[$name][$version])) {
+            return $this->packageIndexCache[$name][$version];
         }
+
+        return null;
+    }
+
+	/**
+     * {@inheritdoc}
+     * @see \Composer\Repository\ArrayRepository::findPackages()
+     */
+    public function findPackages($name, $version = null)
+    {
+        // normalize name
+        $name = strtolower($name);
+        $packages = array();
+
+        // normalize version
+        if (null !== $version) {
+            $version = $this->normalizeVersion($version);
+        }
+
+        if (isset($this->packageIndexCache[$name])) {
+            if ($version === null) {
+                return array_values($this->packageIndexCache[$name]);
+            }
+
+            if (isset($this->packageIndexCache[$name][$version])) {
+                $packages[] = $this->packageIndexCache[$name][$version];
+            }
+
+            return $packages;
+        }
+
+        foreach ($this->channel->getPackages() as $packageInfo) {
+            $packageName = strtolower($this->createPackageName($packageInfo));
+
+            if ($packageName != $name) {
+                continue;
+            }
+
+            foreach ($packageInfo->getReleases() as $releaseInfo) {
+                $package = $this->createPackage($releaseInfo);
+
+                if ($package && ($version === null || $version == $package->getVersion())) {
+                    $packages[] = $package;
+                }
+            }
+
+            break;
+        }
+
+        return $packages;
+    }
+
+	/**
+     * {@inheritdoc}
+     * @see \Composer\Repository\ArrayRepository::hasPackage()
+     */
+    public function hasPackage(PackageInterface $package)
+    {
+        $hit = $this->findPackage($package->getName(), $package->getVersion());
+
+        if (!$hit || ($hit->getUniqueName() != $package->getUniqueName())) {
+            return false;
+        }
+
+        return true;
+    }
+
+	/**
+     * {@inheritdoc}
+     * @see \Composer\Repository\ArrayRepository::search()
+     */
+    public function search($query, $mode = 0)
+    {
+        $result = null;
+
+        foreach ($this->channel->search() as $info) {
+            $packageName = $this->createPackageName($info);
+
+            $result[$packageName] = array(
+                'name' => $packageName,
+                'description' => ''
+            );
+        }
+
+        return $result;
     }
 }
