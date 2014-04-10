@@ -24,6 +24,6 @@ class MagentoPlugin implements PluginInterface
         }
 
         $composer->getRepositoryManager()->setRepositoryClass('mage', 'luka\composer\MagentoConnectRepository');
-        $composer->getInstallationManager()->addInstaller(new MagentoPackageInstaller($composer, $io));
+        $composer->getInstallationManager()->addInstaller(new MagentoPackageInstaller($io, $composer, 'magento-connect-package'));
     }
 }
