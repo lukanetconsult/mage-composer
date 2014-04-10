@@ -9,7 +9,6 @@
 
 namespace luka\composer;
 
-chdir('/home/helmert/tmp/composer-global');
 if (PHP_SAPI != 'cli') {
     echo 'Composer must be invoked from CLI.', PHP_EOL;
     exit(2);
