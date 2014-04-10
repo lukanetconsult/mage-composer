@@ -180,7 +180,7 @@ class MagentoPackageInstaller extends LibraryInstaller
 
             if (!isset($archive[$path])) {
                 if (!isset($archive[$targetPath])) {
-                    $this->io->write('<error>Failed to extract package file: ' . $path . '<error>');
+                    $this->io->write('    <error>Failed to extract package file: ' . $path . '<error>');
                     continue;
                 }
 
@@ -188,7 +188,7 @@ class MagentoPackageInstaller extends LibraryInstaller
             }
 
             if (file_exists($targetPath) && !$overwrite) {
-                $this->io->write('<warning>Cannot install package file (File exists): ' . $targetPath . '<warning>');
+                $this->io->write('    <warning>Cannot install package file (File exists): ' . $targetPath . '<warning>');
                 continue;
             }
 
