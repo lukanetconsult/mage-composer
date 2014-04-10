@@ -19,6 +19,10 @@ class MagentoPlugin implements PluginInterface
      */
     public function activate(Composer $composer, IOInterface $io)
     {
+        if ($io->isVerbose()) {
+            $io->write('Loading magento composer module');
+        }
+
         $composer->getRepositoryManager()->setRepositoryClass('mage', 'luka\composer\MagentoConnectRepository');
         $composer->getInstallationManager()->addInstaller(new MagentoPackageInstaller($composer, $io));
     }
