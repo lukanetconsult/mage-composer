@@ -24,6 +24,7 @@ class Factory extends ComposerFactory
     {
         parent::createDefaultInstallers($im, $composer, $io);
         $im->addInstaller(new MagentoPackageInstaller($io, $composer, 'magento-connect-package'));
+        $im->addInstaller(new MagentoInstaller($io, $composer));
     }
 
 	/**
