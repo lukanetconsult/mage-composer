@@ -15,11 +15,11 @@ class SatisConsoleApplication extends Application
      * {@inheritdoc}
      * @see \Composer\Console\Application::getComposer()
      */
-    public function getComposer($required = true, $disablePlugins = false)
+    public function getComposer($required = true, $config = null)
     {
         if (null === $this->composer) {
             try {
-                $this->composer = Factory::create($this->io, null, $disablePlugins);
+                $this->composer = Factory::create($this->io, $config, false);
             } catch (\InvalidArgumentException $e) {
                 if ($required) {
                     $this->io->write($e->getMessage());
