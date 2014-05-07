@@ -17,6 +17,7 @@ use Composer\EventDispatcher\EventDispatcher;
 use Composer\Util\RemoteFilesystem;
 use Composer\Package\Version\VersionParser;
 use Composer\Package\CompletePackage;
+use Composer\Package\Link;
 
 class MagentoConnectRepository extends ArrayRepository
 {
@@ -124,6 +125,9 @@ class MagentoConnectRepository extends ArrayRepository
         $package->setType('magento-connect-module');
         $package->setDistType('file');
         $package->setDistUrl($info->getArchiveUrl());
+        $package->setRequires(array(
+            new Link($composerPackageName, 'luka/mage-composer-plugin', $this->versionParser->parseConstraints('dev-master'), 'requires', 'dev-master')
+        ));
 
         $this->addPackage($package);
         return $package;
