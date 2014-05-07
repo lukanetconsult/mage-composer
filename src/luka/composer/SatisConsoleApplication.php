@@ -9,7 +9,7 @@ namespace luka\composer;
 
 use Composer\Satis\Console\Application;
 
-class ConsoleApplication extends Application
+class SatisConsoleApplication extends Application
 {
     /**
      * {@inheritdoc}
