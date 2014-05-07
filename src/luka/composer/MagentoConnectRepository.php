@@ -17,10 +17,8 @@ use Composer\EventDispatcher\EventDispatcher;
 use Composer\Util\RemoteFilesystem;
 use Composer\Package\Version\VersionParser;
 use Composer\Package\CompletePackage;
-use Composer\DependencyResolver\Pool;
-use Composer\Package\PackageInterface;
 
-class MagentoConnectRepository extends ArrayRepository implements ProviderRepositoryInterface
+class MagentoConnectRepository extends ArrayRepository
 {
     /**
      * @var string
@@ -133,142 +131,16 @@ class MagentoConnectRepository extends ArrayRepository implements ProviderReposi
 
     /**
      * {@inheritdoc}
-     * @see \luka\composer\ProviderRepositoryInterface::whatProvides()
+     * @see \Composer\Repository\ArrayRepository::initialize()
      */
-    public function whatProvides(Pool $pool, $name)
+    protected function initialize()
     {
-        if (strpos($name, strtolower($this->vendorAlias) . '/') !== 0) {
-            return array();
-        }
+        parent::initialize();
 
-        $candidates = array();
-
-        foreach ($this->findPackages($name) as $package) {
-            $stability = $this->versionParser->parseStability($package->getStability());
-
-            if (!$pool->isPackageAcceptable($package->getName(), $stability)) {
-                continue;
+        foreach ($this->channel->getPackages() as $package) {
+            foreach ($package->getReleases() as $release) {
+                $this->createPackage($release);
             }
-
-            $candidates[] = $package;
         }
-
-        return $candidates;
-    }
-
-    /**
-     * {@inheritdoc}
-     * @see \Composer\Repository\ArrayRepository::addPackage()
-     */
-    public function addPackage(PackageInterface $package)
-    {
-        parent::addPackage($package);
-
-        $name = strtolower($package->getName());
-        $this->packageIndexCache[$name][$package->getVersion()] = $package;
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     * @see \Composer\Repository\ArrayRepository::findPackage()
-     */
-    public function findPackage($name, $version)
-    {
-        // normalize version & name
-        $version = $this->normalizeVersion($version);
-        $name = strtolower($name);
-
-        $this->findPackages($name);
-
-        if (isset($this->packageIndexCache[$name][$version])) {
-            return $this->packageIndexCache[$name][$version];
-        }
-
-        return null;
-    }
-
-	/**
-     * {@inheritdoc}
-     * @see \Composer\Repository\ArrayRepository::findPackages()
-     */
-    public function findPackages($name, $version = null)
-    {
-        // normalize name
-        $name = strtolower($name);
-        $packages = array();
-
-        // normalize version
-        if (null !== $version) {
-            $version = $this->normalizeVersion($version);
-        }
-
-        if (isset($this->packageIndexCache[$name])) {
-            if ($version === null) {
-                return array_values($this->packageIndexCache[$name]);
-            }
-
-            if (isset($this->packageIndexCache[$name][$version])) {
-                $packages[] = $this->packageIndexCache[$name][$version];
-            }
-
-            return $packages;
-        }
-
-        foreach ($this->channel->getPackages() as $packageInfo) {
-            $packageName = strtolower($this->createPackageName($packageInfo));
-
-            if ($packageName != $name) {
-                continue;
-            }
-
-            foreach ($packageInfo->getReleases() as $releaseInfo) {
-                $package = $this->createPackage($releaseInfo);
-
-                if ($package && ($version === null || $version == $package->getVersion())) {
-                    $packages[] = $package;
-                }
-            }
-
-            break;
-        }
-
-        return $packages;
-    }
-
-	/**
-     * {@inheritdoc}
-     * @see \Composer\Repository\ArrayRepository::hasPackage()
-     */
-    public function hasPackage(PackageInterface $package)
-    {
-        $hit = $this->findPackage($package->getName(), $package->getVersion());
-
-        if (!$hit || ($hit->getUniqueName() != $package->getUniqueName())) {
-            return false;
-        }
-
-        return true;
-    }
-
-	/**
-     * {@inheritdoc}
-     * @see \Composer\Repository\ArrayRepository::search()
-     */
-    public function search($query, $mode = 0)
-    {
-        $result = null;
-
-        foreach ($this->channel->search() as $info) {
-            $packageName = $this->createPackageName($info);
-
-            $result[$packageName] = array(
-                'name' => $packageName,
-                'description' => ''
-            );
-        }
-
-        return $result;
     }
 }

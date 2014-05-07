@@ -51,7 +51,7 @@ class ReleaseInfo
         return $this->package;
     }
 
-	/**
+    /**
      * @return unknown
      */
     public function getVersion()
@@ -59,7 +59,7 @@ class ReleaseInfo
         return $this->version;
     }
 
-	/**
+    /**
      * @return unknown
      */
     public function getStability()
@@ -72,7 +72,7 @@ class ReleaseInfo
      */
     public function getArchiveUrl()
     {
-        $path = sprintf('%s/%s/%s/%2$s-%3$s.tgz', $this->channel->getUrl(), $this->package->getName(), $this->getVersion());
+        $path = sprintf('%s/%3$s/%2$s-%3$s.tgz', $this->channel->getUrl(), $this->package->getName(), $this->getVersion());
         return $path;
     }
 }

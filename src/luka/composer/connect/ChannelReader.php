@@ -27,7 +27,7 @@ class ChannelReader
     protected $packages = null;
 
     /**
-     * @param string $channelUrl
+     * @param string $channelUrl This is the Magento connect 2.0 "key"
      * @param RemoteFilesystem $rfs
      */
     public function __construct($channelUrl, RemoteFilesystem $rfs)
@@ -44,7 +44,7 @@ class ChannelReader
         return $this->url;
     }
 
-	/**
+    /**
      * @param string $path
      * @return \SimpleXMLElement
      */
@@ -59,29 +59,6 @@ class ChannelReader
     }
 
     /**
-     * @param string $query
-     * @return PackageInfo[]
-     */
-    protected function search($query)
-    {
-        $filter = function($value) {
-            return preg_quote($value, '~');
-        };
-
-        $pattern = implode('|', array_map($filter, preg_split('~\s+~', $query)));
-        $pattern = "~$pattern~i";
-        $result = array();
-
-        foreach ($this->getPackages() as $package) {
-            if (preg_match($pattern, $package->getName())) {
-                $result[] = $package;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
      * @return PackageInfo[]
      */
     public function getPackages()
@@ -90,16 +67,22 @@ class ChannelReader
             return $this->packages;
         }
 
-        $this->packages = array();
-        $xml = $this->requestXml('/packages.xml');
-
-        foreach ($xml->p as $packageNode) {
-            $name = (string)$packageNode->n;
-
-            if ($name) {
-                $this->packages[] = new PackageInfo($name, $this);
-            }
+        if (!preg_match('~/(?P<name>[^/]+)$~', $this->url, $m)) {
+            throw new \RuntimeException('Invalid magento connect key: ' . $this->url);
         }
+
+        $this->packages = array();
+        $this->packages[] = new PackageInfo($m['name'], $this);
+
+        // Too slow
+//         $xml = $this->requestXml('/packages.xml');
+//         foreach ($xml->p as $packageNode) {
+//             $name = (string)$packageNode->n;
+
+//             if ($name) {
+//                 $this->packages[] = new PackageInfo($name, $this);
+//             }
+//         }
 
         return $this->packages;
     }
@@ -110,7 +93,7 @@ class ChannelReader
      */
     public function loadReleases(PackageInfo $package)
     {
-        $xml = $this->requestXml(sprintf('/%s/releases.xml', $package->getName()));
+        $xml = $this->requestXml('/releases.xml');
         $releases = new \ArrayObject();
 
         foreach ($xml->r as $releaseNode) {
@@ -131,6 +114,6 @@ class ChannelReader
      */
     public function getPackageXml(ReleaseInfo $info)
     {
-        return $this->requestXml(sprintf('/%s/%s/package.xml', $info->getPackage()->getName(), $info->getVersion()));
+        return $this->requestXml(sprintf('/%s/package.xml', $info->getVersion()));
     }
 }

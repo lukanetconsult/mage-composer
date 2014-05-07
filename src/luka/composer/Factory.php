@@ -11,23 +11,22 @@ use Composer\Factory as ComposerFactory;
 use Composer\IO\IOInterface;
 use Composer\Config;
 use Composer\EventDispatcher\EventDispatcher;
-use Composer\Installer\InstallationManager;
 use Composer\Composer;
 
 class Factory extends ComposerFactory
 {
-    /**
-     * {@inheritdoc}
-     * @see \Composer\Factory::createDefaultInstallers()
-     */
-    protected function createDefaultInstallers(InstallationManager $im, Composer $composer, IOInterface $io)
-    {
-        parent::createDefaultInstallers($im, $composer, $io);
-        $im->addInstaller(new MagentoPackageInstaller($io, $composer, 'magento-connect-package'));
-        $im->addInstaller(new MagentoInstaller($io, $composer));
-    }
+//     /**
+//      * {@inheritdoc}
+//      * @see \Composer\Factory::createDefaultInstallers()
+//      */
+//     protected function createDefaultInstallers(InstallationManager $im, Composer $composer, IOInterface $io)
+//     {
+//         parent::createDefaultInstallers($im, $composer, $io);
+//         $im->addInstaller(new MagentoPackageInstaller($io, $composer, 'magento-connect-package'));
+//         $im->addInstaller(new MagentoInstaller($io, $composer));
+//     }
 
-	/**
+    /**
      * {@inheritdoc}
      * @see \Composer\Factory::createRepositoryManager()
      */
