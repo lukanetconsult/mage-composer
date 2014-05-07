@@ -12,7 +12,8 @@
     "autoload" : {
         "psr-0" : {
             "luka\\composer\\" : "src/"
-        }
+        },
+        "classmap" : [ "src/luka/composer/ComposerPlugin.php" ]
     },
     "description" : "This plugin allows installing packages from magento connect and creating satis repos from connect keys",
     "homepage" : "http://www.luka.de/",
