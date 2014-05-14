@@ -61,7 +61,11 @@ class MagentoPackageInstaller extends LibraryInstaller
      */
     protected function getArchiveFile(PackageInterface $package)
     {
-        return $this->getInstallPath($package) . '/' . pathinfo($package->getDistUrl(), PATHINFO_BASENAME);
+        $result = glob($this->getInstallPath($package) . '/*.tgz');
+        $file = current($result);
+
+        return $file;
+//         return $this->getInstallPath($package) . '/' . pathinfo($package->getDistUrl(), PATHINFO_BASENAME);
     }
 
     /**
@@ -214,11 +218,16 @@ class MagentoPackageInstaller extends LibraryInstaller
 
         parent::installCode($package);
 
+        $archive = $this->getArchiveFile($package);
+        if (!$archive) {
+            throw new \RuntimeException('Invalid Magento Connect Package. Could not find connect package tgz.');
+        }
+
         /* @var $descriptionFile \PharFileInfo */
         try {
-            $archive = new \PharData($this->getArchiveFile($package));
+            $archive = new \PharData($archive);
         } catch (\Exception $e) {
-            $archive = $this->fixArchive($this->getArchiveFile($package));
+            $archive = $this->fixArchive($archive);
         }
 
         $descriptionFile = isset($archive['package.xml'])? $archive['package.xml'] : false;
