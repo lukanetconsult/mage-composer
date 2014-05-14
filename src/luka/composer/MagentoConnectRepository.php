@@ -122,7 +122,7 @@ class MagentoConnectRepository extends ArrayRepository
             return false;
         }
 
-        $package = new CompletePackage($composerPackageName, $normalizedVersion, $version);
+        $package = new CompletePackage($composerPackageName, $normalizedVersion, $normalizedVersion);
         $package->setType('magento-connect-module');
         $package->setDistType('file');
         $package->setDistUrl($info->getArchiveUrl());
