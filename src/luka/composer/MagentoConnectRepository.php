@@ -126,7 +126,7 @@ class MagentoConnectRepository extends ArrayRepository
         $package->setDistType('file');
         $package->setDistUrl($info->getArchiveUrl());
         $package->setRequires(array(
-            new Link($composerPackageName, 'luka/mage-composer-plugin', $this->versionParser->parseConstraints('~1.0'), 'requires', 'dev-master')
+            new Link($composerPackageName, 'luka/mage-composer-plugin', $this->versionParser->parseConstraints('~1.0'), 'requires', '~1.0')
         ));
 
         $this->addPackage($package);
