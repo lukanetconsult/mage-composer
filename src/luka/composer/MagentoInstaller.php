@@ -24,6 +24,7 @@ class MagentoInstaller extends LibraryInstaller
      * @var string
      */
     protected $rootDir = null;
+    protected $strategy = 'copy';
 
     protected $installedFiles = array();
     protected $installedDirs = array();
@@ -37,7 +38,11 @@ class MagentoInstaller extends LibraryInstaller
         parent::__construct($io, $composer, $type, $filesystem);
 
         $extra = $composer->getPackage()->getExtra();
-        $this->rootDir = isset($extra['rootDir'])? $this->filesystem->normalizePath($extra['rootDir']) : '';
+        $this->rootDir = isset($extra['magento-root-dir'])? $this->filesystem->normalizePath($extra['magento-root-dir']) : '';
+
+        if (isset($extra['magento-deploystrategy'])) {
+            $this->strategy = $extra['magento-deploystrategy'];
+        }
 
         if (!empty($this->rootDir) && (substr($this->rootDir, -1) != '/')) {
             $this->rootDir .= '/';
@@ -142,7 +147,7 @@ class MagentoInstaller extends LibraryInstaller
         $this->writeInstallInfo($package);
     }
 
-	/**
+    /**
      * {@inheritdoc}
      * @see \Composer\Installer\LibraryInstaller::removeCode()
      */

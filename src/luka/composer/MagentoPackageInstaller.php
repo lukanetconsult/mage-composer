@@ -55,7 +55,7 @@ class MagentoPackageInstaller extends LibraryInstaller
         return in_array($packageType, $supported);
     }
 
-	/**
+    /**
      * @param PackageInterface $package
      * @return string
      */
@@ -95,7 +95,7 @@ class MagentoPackageInstaller extends LibraryInstaller
     protected function getRootDir($path)
     {
         $extra = $this->composer->getPackage()->getExtra();
-        $dir = isset($extra['rootDir'])? $extra['rootDir'] : '';
+        $dir = isset($extra['magento-root-dir'])? $extra['magento-root-dir'] : '';
 
         if ($path) {
             $dir = implode('/', array_filter(array($dir, $path)));
@@ -203,7 +203,7 @@ class MagentoPackageInstaller extends LibraryInstaller
         }
     }
 
-	/**
+    /**
      * {@inheritdoc}
      * @see \Composer\Installer\LibraryInstaller::installCode()
      */
@@ -238,7 +238,7 @@ class MagentoPackageInstaller extends LibraryInstaller
         $this->writeInstallInfo($package);
     }
 
-	/**
+    /**
      * {@inheritdoc}
      * @see \Composer\Installer\LibraryInstaller::removeCode()
      */
