@@ -89,8 +89,8 @@ class MagentoConnectRepository extends ArrayRepository
      */
     protected function normalizeVersion($version)
     {
-        if (preg_match('~^\d+(.\d){3}(.\d+)+(-(alpha\d*|beta\d*|dev\d*|rc\d*))?$~', $version)) {
-            return $version;
+        if (preg_match('~^(?P<version>\d+(.\d+){3})(?P<level>(.\d+)+)(-(?P<stability>alpha|beta|dev|rc)\d*)?$~', $version, $m)) {
+            return $m['version'] . '-' . $m['stability'] . str_replace('.', '', $m['level']);
         }
 
         return $this->versionParser->normalize($version);
