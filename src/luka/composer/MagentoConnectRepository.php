@@ -89,10 +89,10 @@ class MagentoConnectRepository extends ArrayRepository
      */
     protected function normalizeVersion($version)
     {
-        if (preg_match('~^(?P<version>\d+(.\d+){3})(?P<level>(.\d+)+)(-(?P<stability>alpha|beta|dev|rc)\d*)?$~', $version, $m)) {
-            $s = isset($m['stability'])? $m['stability'] : 'stable';
-            return $m['version'] . '-' . $s . str_replace('.', '', $m['level']);
-        }
+//         if (preg_match('~^(?P<version>\d+(.\d+){3})(?P<level>(.\d+)+)(-(?P<stability>alpha|beta|dev|rc)\d*)?$~', $version, $m)) {
+//             $s = isset($m['stability'])? $m['stability'] : 'stable';
+//             return $m['version'] . '-' . $s . str_replace('.', '', $m['level']);
+//         }
 
         return $this->versionParser->normalize($version);
     }
@@ -112,7 +112,7 @@ class MagentoConnectRepository extends ArrayRepository
     private function createPackage(ReleaseInfo $info)
     {
         $package = $info->getPackage();
-        $composerPackageName = $this->createPackageName($info->getPackage());
+        $composerPackageName = $this->createPackageName($package);
         $version = $info->getVersion();
 
         try {
@@ -122,7 +122,7 @@ class MagentoConnectRepository extends ArrayRepository
             return false;
         }
 
-        $package = new CompletePackage($composerPackageName, $normalizedVersion, $normalizedVersion);
+        $package = new CompletePackage($composerPackageName, $normalizedVersion, $version);
         $package->setType('magento-connect-module');
         $package->setDistType('file');
         $package->setDistUrl($info->getArchiveUrl());

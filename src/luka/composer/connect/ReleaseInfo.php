@@ -44,6 +44,25 @@ class ReleaseInfo
     }
 
     /**
+     * @param string $version
+     * @return string|unknown
+     */
+    private function sanitizeVersion($version)
+    {
+        if (preg_match('~^(?P<version>\d+(.\d+){3})(?P<plevel>(.\d+)+)(-(?P<stability>(alpha|beta|dev|rc)\d*))?$~', $version, $m)) {
+            $stability = isset($m['stability'])? $m['stability'] : $this->getStability();
+
+            if ($stability) {
+                $stability = '-' . $stability;
+            }
+
+            return $m['version'] . $stability;
+        }
+
+        return $version;
+    }
+
+    /**
      * @return PackageInfo
      */
     public function getPackage()
@@ -54,9 +73,13 @@ class ReleaseInfo
     /**
      * @return unknown
      */
-    public function getVersion()
+    public function getVersion($raw = false)
     {
-        return $this->version;
+        if ($raw) {
+            return $this->version;
+        }
+
+        return $this->sanitizeVersion($this->version);
     }
 
     /**

@@ -8,6 +8,7 @@
 namespace luka\composer\connect;
 
 use Composer\Util\RemoteFilesystem;
+use Composer\Package\Version\VersionParser;
 
 class ChannelReader
 {
@@ -95,6 +96,8 @@ class ChannelReader
     {
         $xml = $this->requestXml('/releases.xml');
         $releases = new \ArrayObject();
+        $versionParser = new VersionParser();
+        $versionMap = array();
 
         foreach ($xml->r as $releaseNode) {
             $version = (string)$releaseNode->v;
@@ -103,8 +106,18 @@ class ChannelReader
                 continue;
             }
 
-            $releases[$version] = new ReleaseInfo($this, $package, (string)$releaseNode->v, (string)$releaseNode->s);
+            $info = new ReleaseInfo($this, $package, $version, (string)$releaseNode->s);
+            $composerVersion = $info->getVersion();
+
+            if (isset($versionMap[$composerVersion]) && version_compare($versionMap[$composerVersion], $version, '>=')) {
+                continue; // ignore lower patchlevels
+            }
+
+            $versionMap[$composerVersion] = $version;
+            $releases[$composerVersion] = $info;
         }
+
+
 
         return $releases;
     }
