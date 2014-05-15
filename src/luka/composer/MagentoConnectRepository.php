@@ -89,8 +89,8 @@ class MagentoConnectRepository extends ArrayRepository
         $this->versionParser = new VersionParser();
         $this->channel = new connect\ChannelReader($this->url, $this->rfs);
 
-        if (isset($repoConfig['options']['limit-versions'])) {
-            $this->includeVersionConstraint = $this->versionParser->parseConstraints($repoConfig['options']['limit-versions']);
+        if (isset($repoConfig['options']['versions'])) {
+            $this->includeVersionConstraint = $this->versionParser->parseConstraints($repoConfig['options']['versions']);
         }
     }
 
