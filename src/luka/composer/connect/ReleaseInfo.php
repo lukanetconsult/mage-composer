@@ -52,7 +52,9 @@ class ReleaseInfo
         if (preg_match('~^(?P<version>\d+(.\d+){3})(?P<plevel>(.\d+)+)(-(?P<stability>(alpha|beta|dev|rc)\d*))?$~', $version, $m)) {
             $stability = isset($m['stability'])? $m['stability'] : $this->getStability();
 
-            if ($stability) {
+            if ($stability == 'stable') {
+                $stability = '';
+            } if ($stability) {
                 $stability = '-' . $stability;
             }
 
@@ -95,7 +97,7 @@ class ReleaseInfo
      */
     public function getArchiveUrl()
     {
-        $path = sprintf('%s/%3$s/%2$s-%3$s.tgz', $this->channel->getUrl(), $this->package->getName(), $this->getVersion());
+        $path = sprintf('%s/%3$s/%2$s-%3$s.tgz', $this->channel->getUrl(), $this->package->getName(), $this->getVersion(true));
         return $path;
     }
 }
