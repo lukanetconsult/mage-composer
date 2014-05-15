@@ -18,6 +18,8 @@ use Composer\Util\RemoteFilesystem;
 use Composer\Package\Version\VersionParser;
 use Composer\Package\CompletePackage;
 use Composer\Package\Link;
+use Composer\Package\LinkConstraint\VersionConstraint;
+use Composer\Package\LinkConstraint\LinkConstraintInterface;
 
 class MagentoConnectRepository extends ArrayRepository
 {
@@ -57,6 +59,11 @@ class MagentoConnectRepository extends ArrayRepository
     protected $channel = null;
 
     /**
+     * @var LinkConstraintInterface
+     */
+    protected $includeVersionConstraint = null;
+
+    /**
      * @param array $repoConfig
      * @param IOInterface $io
      * @param Config $config
@@ -72,7 +79,7 @@ class MagentoConnectRepository extends ArrayRepository
 
         $urlBits = parse_url($repoConfig['url']);
         if (empty($urlBits['scheme']) || empty($urlBits['host'])) {
-            throw new \UnexpectedValueException('Invalid url given for PEAR repository: '.$repoConfig['url']);
+            throw new \UnexpectedValueException('Invalid url given for Magento Connect 2.0 repository: '.$repoConfig['url']);
         }
 
         $this->url = rtrim($repoConfig['url'], '/');
@@ -81,6 +88,10 @@ class MagentoConnectRepository extends ArrayRepository
         $this->vendorAlias = isset($repoConfig['vendor-alias']) ? $repoConfig['vendor-alias'] : 'mage-community';
         $this->versionParser = new VersionParser();
         $this->channel = new connect\ChannelReader($this->url, $this->rfs);
+
+        if (isset($repoConfig['options']['limit-versions'])) {
+            $this->includeVersionConstraint = $this->versionParser->parseConstraints($repoConfig['options']['limit-versions']);
+        }
     }
 
     /**
@@ -130,6 +141,10 @@ class MagentoConnectRepository extends ArrayRepository
             new Link($composerPackageName, 'luka/mage-composer-plugin', $this->versionParser->parseConstraints('~1.0'), 'requires', '~1.0')
         ));
 
+        $package->setExtra(array(
+            'magento-connect-orig-version' => $info->getVersion(true)
+        ));
+
         $this->addPackage($package);
         return $package;
     }
@@ -144,6 +159,10 @@ class MagentoConnectRepository extends ArrayRepository
 
         foreach ($this->channel->getPackages() as $package) {
             foreach ($package->getReleases() as $release) {
+                if ($this->includeVersionConstraint && !$this->includeVersionConstraint->matches(new VersionConstraint('=', $this->normalizeVersion($release->getVersion())))) {
+                    continue;
+                }
+
                 $this->createPackage($release);
             }
         }
