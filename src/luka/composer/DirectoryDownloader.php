@@ -40,7 +40,33 @@ class DirectoryDownloader implements DownloaderInterface
         $this->filesystem = $filesystem ?: new Filesystem();
     }
 
+    /**
+     * @param string $source
+     * @param string $dist
+     * @param string $base
+     */
+    protected function copy($source, $dest)
+    {
+        $dir = new \DirectoryIterator($source);
+        $this->filesystem->ensureDirectoryExists($dest);
 
+        foreach ($dir as $file) {
+            if ($file->isDot()) {
+                continue;
+            }
+
+            $destPath = $dest . '/' . $file->getFilename();
+
+            if ($file->isDir()) {
+                $this->copy($file->getPathname(), $destPath);
+                continue;
+            }
+
+            copy($file->getPathname(), $destPath);
+        }
+
+        return $this;
+    }
 
     /**
      * {@inheritdoc}
@@ -49,16 +75,19 @@ class DirectoryDownloader implements DownloaderInterface
     public function download(PackageInterface $package, $path)
     {
         @unlink($path);
-        $this->filesystem->ensureDirectoryExists(dirname($path));
+        $this->filesystem->removeDirectory($path);
+        $this->filesystem->ensureDirectoryExists($path);
 
-        $target = $this->filesystem->normalizePath($package->getSourceUrl());
-        if (empty($target) || !is_dir($target)) {
-            throw new \RuntimeException('Invalid source directory: ' . $target);
+        $source = $this->filesystem->normalizePath($package->getDistUrl());
+
+        if (empty($source) || !is_dir($source)) {
+            throw new \RuntimeException(sprintf(
+                'Invalid directory: "%s" (%s)',
+                $source, $package->getDistUrl()
+            ));
         }
 
-        if (!symlink($target, $path)) {
-            throw new \RuntimeException('Failed to symlink directory');
-        }
+        $this->copy($source, $path);
     }
 
     /**
