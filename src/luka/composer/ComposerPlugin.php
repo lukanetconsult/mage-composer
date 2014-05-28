@@ -24,5 +24,8 @@ class ComposerPlugin implements PluginInterface
         $im = $composer->getInstallationManager();
         $im->addInstaller(new MagentoPackageInstaller($io, $composer, 'magento-connect-package'));
         $im->addInstaller(new MagentoInstaller($io, $composer));
+
+        $composer->getDownloadManager()
+            ->setDownloader('directory', new DirectoryDownloader($io, $composer->getEventDispatcher()));
     }
 }
