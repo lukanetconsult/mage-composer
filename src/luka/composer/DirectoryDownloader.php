@@ -67,7 +67,7 @@ class DirectoryDownloader implements DownloaderInterface
      */
     public function getInstallationSource()
     {
-        return 'source';
+        return 'dist';
     }
 
     /**
