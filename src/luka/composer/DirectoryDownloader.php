@@ -51,7 +51,7 @@ class DirectoryDownloader implements DownloaderInterface
         $this->filesystem->ensureDirectoryExists($dest);
 
         foreach ($dir as $file) {
-            if ($file->isDot()) {
+            if ($file->isDot() || in_array($file->getFilename(), array('.svn', '.git'))) {
                 continue;
             }
 
@@ -74,6 +74,8 @@ class DirectoryDownloader implements DownloaderInterface
      */
     public function download(PackageInterface $package, $path)
     {
+        $this->io->write("  - Installing <info>" . $package->getName() . "</info> (<comment>" . VersionParser::formatVersion($package) . "</comment>)");
+
         @unlink($path);
         $this->filesystem->removeDirectory($path);
         $this->filesystem->ensureDirectoryExists($path);
@@ -87,6 +89,7 @@ class DirectoryDownloader implements DownloaderInterface
             ));
         }
 
+        $this->io->write("    Copying directory <comment>$source</comment>");
         $this->copy($source, $path);
     }
 
