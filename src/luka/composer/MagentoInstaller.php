@@ -26,6 +26,11 @@ class MagentoInstaller extends LibraryInstaller
     protected $rootDir = null;
     protected $strategy = 'copy';
 
+    protected $types = array(
+        'magento-customization',
+        'magento-patch',
+    );
+
     protected $installedFiles = array();
     protected $installedDirs = array();
 
@@ -33,9 +38,9 @@ class MagentoInstaller extends LibraryInstaller
      * {@inheritdoc}
      * @see \Composer\Installer\LibraryInstaller::__construct()
      */
-    public function __construct(IOInterface $io, Composer $composer, $type = 'magento-module', Filesystem $filesystem = null)
+    public function __construct(IOInterface $io, Composer $composer, Filesystem $filesystem = null)
     {
-        parent::__construct($io, $composer, $type, $filesystem);
+        parent::__construct($io, $composer, 'magento-customization', $filesystem);
 
         $extra = $composer->getPackage()->getExtra();
         $this->rootDir = isset($extra['magento-root-dir'])? $this->filesystem->normalizePath($extra['magento-root-dir']) : '';
@@ -47,6 +52,15 @@ class MagentoInstaller extends LibraryInstaller
         if (!empty($this->rootDir) && (substr($this->rootDir, -1) != '/')) {
             $this->rootDir .= '/';
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     * @see \Composer\Installer\LibraryInstaller::supports()
+     */
+    public function supports($packageType)
+    {
+        return in_array($packageType, $this->types);
     }
 
     /**
@@ -84,8 +98,12 @@ class MagentoInstaller extends LibraryInstaller
      */
     protected function isOverwriteAllowed(PackageInterface $package)
     {
+        if ($package->getType() == 'magento-patch') {
+            return true;
+        }
+
         $extra = $package->getExtra();
-        return (isset($extra['overwrite']) && $extra['overwrite']);
+        return (isset($extra['magento-patch']) && $extra['magento-patch']);
     }
 
     /**
@@ -169,6 +187,8 @@ class MagentoInstaller extends LibraryInstaller
 
             if ($this->io->isVeryVerbose() && $result) {
                 $this->io->write(sprintf('    <comment>Removed empty directory "%s"</comment>', $dir));
+            } else if (!$result) {
+                $this->io->write(sprintf('    <warning>Cannot remove "%s": Directory is not empty</warning>', $dir));
             }
         }
 

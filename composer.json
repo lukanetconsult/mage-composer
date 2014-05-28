@@ -1,17 +1,21 @@
 {
     "name" : "luka/mage-composer-plugin",
-    "type" : "composer-installer",
+    "type" : "composer-plugin",
+    "license" : "GPL 3",
     "repositories" : [{
             "type" : "git",
             "url" : "https://github.com/composer/composer"
         }
     ],
+    "require" : {
+        "composer-plugin-api" : "1.0.0"
+    },
     "require-dev" : {
         "composer/composer" : "dev-master"
     },
     "autoload" : {
         "psr-0" : {
-            "luka\\composer\\" : "src/"
+            "luka\\composer" : "src/"
         }
     },
     "description" : "This plugin allows installing packages from magento connect and creating satis repos from connect keys",
@@ -27,7 +31,7 @@
         "connect"
     ],
     "extra" : {
-        "class" : "luka\\composer\\MagentoPackageInstaller",
+        "class" : "luka\\composer\\ComposerPlugin",
         "branch-alias": {
             "dev-master": "1.0.x-dev"
         }
