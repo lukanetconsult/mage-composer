@@ -21,6 +21,8 @@ class ComposerPlugin implements PluginInterface
      */
     public function activate(Composer $composer, IOInterface $io)
     {
+        throw new \RuntimeException('Fine!');
+
         $im = $composer->getInstallationManager();
         $im->addInstaller(new MagentoPackageInstaller($io, $composer, 'magento-connect-package'));
         $im->addInstaller(new MagentoInstaller($io, $composer));
