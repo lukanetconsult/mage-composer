@@ -15,6 +15,7 @@ use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 use Composer\Package\Version\VersionParser;
 use Composer\EventDispatcher\EventDispatcher;
+use Composer\Package\Archiver\ArchivableFilesFinder;
 
 class DirectoryDownloader implements DownloaderInterface
 {
@@ -43,27 +44,41 @@ class DirectoryDownloader implements DownloaderInterface
     /**
      * @param string $source
      * @param string $dist
+     * @param array $excludes
      * @param string $base
      */
-    protected function copy($source, $dest)
+    protected function copy($source, $dest, $excludes)
     {
-        $dir = new \DirectoryIterator($source);
+        $files = new ArchivableFilesFinder($source, $excludes);
+//         $dir = new \DirectoryIterator($source);
         $this->filesystem->ensureDirectoryExists($dest);
 
-        foreach ($dir as $file) {
-            if ($file->isDot() || in_array($file->getFilename(), array('.svn', '.git'))) {
-                continue;
+        /* @var $file \SplFileInfo */
+        foreach ($files as $file) {
+            $relativePath = str_replace('~^' . preg_quote($source, '~') . '~', '', $file->getPath());
+            $dir = ltrim(dirname($relativePath), '/');
+
+            if ($dir) {
+                $this->filesystem->ensureDirectoryExists($dest . '/' . $dir);
             }
 
-            $destPath = $dest . '/' . $file->getFilename();
-
-            if ($file->isDir()) {
-                $this->copy($file->getPathname(), $destPath);
-                continue;
-            }
-
-            copy($file->getPathname(), $destPath);
+            copy($file->getPath(), $dest . '/' . ltrim($relativePath, '/'));
         }
+
+//         foreach ($dir as $file) {
+//             if ($file->isDot() || in_array($file->getFilename(), array('.svn', '.git'))) {
+//                 continue;
+//             }
+
+//             $destPath = $dest . '/' . $file->getFilename();
+
+//             if ($file->isDir()) {
+//                 $this->copy($file->getPathname(), $destPath);
+//                 continue;
+//             }
+
+//             copy($file->getPathname(), $destPath);
+//         }
 
         return $this;
     }
@@ -90,7 +105,7 @@ class DirectoryDownloader implements DownloaderInterface
         }
 
         $this->io->write("    Copying directory <comment>$source</comment>");
-        $this->copy($source, $path);
+        $this->copy($source, $path, $package->getArchiveExcludes());
     }
 
     /**
