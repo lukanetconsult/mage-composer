@@ -127,7 +127,7 @@ class MagentoInstaller extends LibraryInstaller
             $relativePath = substr($file->getPathname(), $pathOffset);
             $targetPath = $this->rootDir . $relativePath;
 
-            if ($relativePath == 'install.info') {
+            if (in_array($relativePath, array('install.info', 'composer.json'))) {
                 continue;
             }
 
