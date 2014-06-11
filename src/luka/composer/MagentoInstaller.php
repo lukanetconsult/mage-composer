@@ -194,5 +194,17 @@ class MagentoInstaller extends LibraryInstaller
 
         $infoFile = $this->getInstallPath($package) . '/install.info';
         @unlink($infoFile);
+
+        parent::removeCode($package);
+    }
+
+    /**
+     * {@inheritdoc}
+     * @see \Composer\Installer\LibraryInstaller::updateCode()
+     */
+    protected function updateCode(PackageInterface $initial, PackageInterface $target)
+    {
+        $this->removeCode($initial);
+        $this->installCode($target);
     }
 }
