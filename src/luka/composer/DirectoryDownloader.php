@@ -62,6 +62,10 @@ class DirectoryDownloader implements DownloaderInterface
                 $this->filesystem->ensureDirectoryExists($dest . '/' . $dir);
             }
 
+            if ($this->io->isVeryVerbose()) {
+                $this->io->write(sprintf('    -> copy <comment>%s</comment>', $relativePath));
+            }
+
             copy($file->getPathname(), $dest . '/' . ltrim($relativePath, '/'));
         }
 
@@ -96,8 +100,9 @@ class DirectoryDownloader implements DownloaderInterface
         $this->filesystem->ensureDirectoryExists($path);
 
         $source = $this->filesystem->normalizePath($package->getDistUrl());
+        $source = ($source)? realpath($source) : false;
 
-        if (empty($source) || !is_dir($source)) {
+        if (!$source || !is_dir($source)) {
             throw new \RuntimeException(sprintf(
                 'Invalid directory: "%s" (%s)',
                 $source, $package->getDistUrl()
@@ -106,6 +111,7 @@ class DirectoryDownloader implements DownloaderInterface
 
         $this->io->write("    Copying directory <comment>$source</comment>");
         $this->copy($source, $path, $package->getArchiveExcludes());
+        $this->io->write('');
     }
 
     /**
