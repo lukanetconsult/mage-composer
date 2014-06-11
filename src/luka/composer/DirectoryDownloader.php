@@ -66,7 +66,7 @@ class DirectoryDownloader implements DownloaderInterface
                 $this->filesystem->ensureDirectoryExists($dest . '/' . $dir);
             }
 
-            if ($this->io->isVeryVerbose() || (substr($source, -6) == '/local')) {
+            if ($this->io->isVeryVerbose()) {
                 $this->io->write(sprintf('    -> copy <comment>%s</comment>', $relativePath));
             }
 
