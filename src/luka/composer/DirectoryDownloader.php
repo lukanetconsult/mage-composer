@@ -70,7 +70,10 @@ class DirectoryDownloader implements DownloaderInterface
                 $this->io->write(sprintf('    -> copy <comment>%s</comment>', $relativePath));
             }
 
-            copy($file->getPathname(), $dest . '/' . ltrim($relativePath, '/'));
+            $destPath = $dest . '/' . ltrim($relativePath, '/');
+            if (!copy($file->getPathname(), $destPath)) {
+                throw new \RuntimeException(sprintf('Failed to copy "%s" to "%s"', $file->getPathname(), $destPath));
+            }
         }
 
 //         foreach ($dir as $file) {
