@@ -55,14 +55,14 @@ class DirectoryDownloader implements DownloaderInterface
 
         /* @var $file \SplFileInfo */
         foreach ($files as $file) {
-            $relativePath = str_replace('~^' . preg_quote($source, '~') . '~', '', $file->getPath());
+            $relativePath = str_replace('~^' . preg_quote($source, '~') . '~', '', $file->getPathname());
             $dir = ltrim(dirname($relativePath), '/');
 
             if ($dir) {
                 $this->filesystem->ensureDirectoryExists($dest . '/' . $dir);
             }
 
-            copy($file->getPath(), $dest . '/' . ltrim($relativePath, '/'));
+            copy($file->getPathname(), $dest . '/' . ltrim($relativePath, '/'));
         }
 
 //         foreach ($dir as $file) {
