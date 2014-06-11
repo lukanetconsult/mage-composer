@@ -55,7 +55,11 @@ class DirectoryDownloader implements DownloaderInterface
 
         /* @var $file \SplFileInfo */
         foreach ($files as $file) {
-            $relativePath = str_replace('~^' . preg_quote($source, '~') . '~', '', $file->getPathname());
+            if (strpos($file->getRealPath(), $source) !== 0) {
+                throw new \RuntimeException(sprintf('Ooops: %s is not in %s?', $file->getRealPath(), $source));
+            }
+
+            $relativePath = substr($file->getRealPath(), strlen($source));
             $dir = ltrim(dirname($relativePath), '/');
 
             if ($dir) {
