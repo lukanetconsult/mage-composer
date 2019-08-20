@@ -8,7 +8,9 @@
         }
     ],
     "require" : {
-        "composer-plugin-api" : "^1.1"
+        "composer-plugin-api" : "^1.1",
+        "ext-simplexml": "*",
+        "ext-json": "*"
     },
     "require-dev" : {
         "composer/composer" : "^1.0"
